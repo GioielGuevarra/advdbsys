@@ -13,9 +13,9 @@ const props = defineProps({
 	<Head title="| Explore" />
 
 	<div class="space-y-1">
-		<h2 class="text-2xl font-semibold tracking-tight">Explore Tools</h2>
+		<h2 class="text-2xl font-semibold tracking-tight">Classic Menu</h2>
 		<p class="text-sm text-muted-foreground">
-			Browse a wide range of tools available for rent near you.
+			Browse a wide range of products under the Classic Category.
 		</p>
 	</div>
 

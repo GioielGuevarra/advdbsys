@@ -2,7 +2,7 @@
 import NavLink from "../Components/NavLink.vue";
 import { Button } from "@/components/ui/button";
 import Logo from "../Components/Logo.vue";
-import { Bell, Home, HandHelping, Telescope, PackagePlus } from "lucide-vue-next";
+import { Bell, HeartHandshake, Gift, GlassWater, CakeSlice, Dessert, Sparkles, Shapes, HandCoins } from "lucide-vue-next";
 import { ref, onMounted, onUnmounted } from "vue";
 
 const theme = ref(document.body.getAttribute("data-theme"));
@@ -37,6 +37,7 @@ onMounted(() => {
 				class="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6 sticky top-0 z-10"
 			>
 				<Link :href="route('home')" class="flex items-center gap-2 font-semibold">
+
 					<span>MELIORAE</span>
 				</Link>
 				<!-- <Button variant="outline" size="icon" class="w-8 h-8 ml-auto">
@@ -50,37 +51,37 @@ onMounted(() => {
 				<nav class="grid items-start gap-1 px-4 text-sm font-medium">
 					<!-- nav links -->
 					<NavLink routeName="home" componentName="Home">
-						<Home class="w-5 h-5" />
+						<Shapes class="w-5 h-5" />
 						All Products
 					</NavLink>
 
-					<NavLink routeName="classic" componentName="Explore">
-						<Telescope class="w-5 h-5" />
+					<NavLink routeName="explore" componentName="Explore">
+						<HeartHandshake class="w-5 h-5" />
 						Classic
 					</NavLink>
 
-					<NavLink routeName="gourmet" componentName="MyRentals">
-						<HandHelping class="w-5 h-5" />
+					<NavLink routeName="my-rentals" componentName="MyRentals">
+						<Sparkles class="w-5 h-5" />
 						Gourmet
 					</NavLink>
 
-					<NavLink routeName="bars-n-squares" componentName="MyRentals">
-						<HandHelping class="w-5 h-5" />
+					<NavLink routeName="my-rentals" componentName="MyRentals">
+						<CakeSlice class="w-5 h-5" />
 						Bars and Squares
 					</NavLink>
 
-					<NavLink routeName="sundaes" componentName="MyRentals">
-						<HandHelping class="w-5 h-5" />
+					<NavLink routeName="my-rentals" componentName="MyRentals">
+						<Dessert class="w-5 h-5" />
 						Sundaes
 					</NavLink>
 
-					<NavLink routeName="milkshakes" componentName="MyRentals">
-						<HandHelping class="w-5 h-5" />
+					<NavLink routeName="my-rentals" componentName="MyRentals">
+						<GlassWater class="w-5 h-5" />
 						Milkshakes
 					</NavLink>
 
-					<NavLink routeName="custom-gift-box" componentName="MyRentals">
-						<HandHelping class="w-5 h-5" />
+					<NavLink routeName="my-rentals" componentName="MyRentals">
+						<Gift class="w-5 h-5" />
 						Custom Gift Box
 					</NavLink>
 				</nav>
@@ -89,8 +90,8 @@ onMounted(() => {
 			<!-- sidebar footer -->
 			<Link :href="route('listing.create')" class="sticky bottom-0 p-4 mt-auto border-t">
 				<Button size="lg" class="w-full font-light" variant="outline">
-					<PackagePlus />
-					Checkout Orders
+					<HandCoins />
+					Checkout
 				</Button>
 			</Link>
 		</div>
