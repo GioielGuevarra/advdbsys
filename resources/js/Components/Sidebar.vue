@@ -37,8 +37,7 @@ onMounted(() => {
 				class="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6 sticky top-0 z-10"
 			>
 				<Link :href="route('home')" class="flex items-center gap-2 font-semibold">
-					<Logo class="w-8 h-8" :fill="theme === 'dark' ? '#FFFFFF' : '#09090B'" />
-					<span>LendWorks</span>
+					<span>MELIORAE</span>
 				</Link>
 				<!-- <Button variant="outline" size="icon" class="w-8 h-8 ml-auto">
                     <Bell class="w-4 h-4" />
@@ -52,17 +51,37 @@ onMounted(() => {
 					<!-- nav links -->
 					<NavLink routeName="home" componentName="Home">
 						<Home class="w-5 h-5" />
-						Home
+						All Products
 					</NavLink>
 
-					<NavLink routeName="explore" componentName="Explore">
+					<NavLink routeName="classic" componentName="Explore">
 						<Telescope class="w-5 h-5" />
-						Explore
+						Classic
 					</NavLink>
 
-					<NavLink routeName="my-rentals" componentName="MyRentals">
+					<NavLink routeName="gourmet" componentName="MyRentals">
 						<HandHelping class="w-5 h-5" />
-						My Rentals
+						Gourmet
+					</NavLink>
+
+					<NavLink routeName="bars-n-squares" componentName="MyRentals">
+						<HandHelping class="w-5 h-5" />
+						Bars and Squares
+					</NavLink>
+
+					<NavLink routeName="sundaes" componentName="MyRentals">
+						<HandHelping class="w-5 h-5" />
+						Sundaes
+					</NavLink>
+
+					<NavLink routeName="milkshakes" componentName="MyRentals">
+						<HandHelping class="w-5 h-5" />
+						Milkshakes
+					</NavLink>
+
+					<NavLink routeName="custom-gift-box" componentName="MyRentals">
+						<HandHelping class="w-5 h-5" />
+						Custom Gift Box
 					</NavLink>
 				</nav>
 			</div>
@@ -71,7 +90,7 @@ onMounted(() => {
 			<Link :href="route('listing.create')" class="sticky bottom-0 p-4 mt-auto border-t">
 				<Button size="lg" class="w-full font-light" variant="outline">
 					<PackagePlus />
-					Create Listing
+					Checkout Orders
 				</Button>
 			</Link>
 		</div>
