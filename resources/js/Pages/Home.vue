@@ -20,9 +20,9 @@ defineProps({
 		<div>
 			<div class="flex items-center justify-between">
 				<div class="space-y-1">
-					<h2 class="text-2xl font-semibold tracking-tight">Top Rented Tools</h2>
+					<h2 class="text-2xl font-semibold tracking-tight">All Products</h2>
 					<p class="text-sm text-muted-foreground">
-						Discover the most popular tools rented by our users.
+						Discover Meliora's whole menu.
 					</p>
 				</div>
 			</div>

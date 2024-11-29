@@ -21,22 +21,20 @@ defineProps({
 			class="grid place-items-center text-center text-gray-100 px-7 py-10 md:py-20 md:px-14"
 		>
 			<!-- title -->
-			<h1 class="text-4xl font-bold tracking-tight sm:text-5xl">
-				Rent to
-				<span class="text-primary">Save</span>, Lend to
-				<span class="text-primary">Earn</span>
+			<h1 class="text-4xl font-md tracking-tight sm:text-5xl">
+				Where your
+				<span class="text-primary">Palate</span> meets
+				<span class="text-primary">Stellar</span> delights.
 			</h1>
 
 			<!-- desc -->
 			<p class="max-w-prose mt-4">
-				Rent tools locally, save money, and get your projects done faster. LendWorks
-				connects you with the tools you need without the hassle of ownership.
+				Browse a huge selection of our products and order in a click of a button.
 			</p>
 
 			<!-- buttons -->
-			<div class="grid grid-row-2 gap-4 w-full mt-10 sm:grid-cols-2 sm:w-80">
-				<Button variant="secondary" class="w-full">List Tools</Button>
-				<Button class="w-full">Rent Tools</Button>
+			<div class="flex w-full py-4 px-4">
+				<Button class="w-full text-black">Order Now!</Button>
 			</div>
 		</div>
 	</div>
