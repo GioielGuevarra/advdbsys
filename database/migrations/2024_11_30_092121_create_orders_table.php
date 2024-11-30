@@ -13,13 +13,14 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id('order_id');
-            $table->unsignedBigInteger('account_id');
+            $table->string('order_number')->unique();  // Added for receipt tracking
             $table->string('customer_name');
-            $table->string('status');
+            $table->enum('status', ['pending', 'preparing', 'completed', 'cancelled'])->default('pending');
             $table->decimal('total_price', 10, 2);
+            $table->unsignedBigInteger('account_id')->nullable();  // Made optional for staff assignment
             $table->timestamps();
     
-            $table->foreign('account_id')->references('account_id')->on('accounts')->onDelete('cascade');
+            $table->foreign('account_id')->references('account_id')->on('accounts')->onDelete('set null');
         });
     }
 

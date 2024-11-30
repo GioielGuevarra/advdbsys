@@ -15,18 +15,12 @@ class CategorySeeder extends Seeder
     {
         // define
         $categories = [
-            ['name' => 'Power Tools', 'description' => 'Drills, saws, grinders, sanders, etc.'],
-            ['name' => 'Hand Tools', 'description' => 'Hammers, wrenches, screwdrivers, pliers, etc.'],
-            ['name' => 'Construction Equipment', 'description' => 'Cement mixers, jackhammers, scaffolding, etc.'],
-            ['name' => 'Gardening Tools and Equipment', 'description' => 'Lawn mowers, hedge trimmers, shovels, rakes, etc.'],
-            ['name' => 'Automotive Tools', 'description' => 'Car jacks, battery chargers, diagnostic tools, etc.'],
-            ['name' => 'Painting & Decorating', 'description' => 'Paint sprayers, ladders, wallpaper steamers, etc.'],
-            ['name' => 'Cleaning Equipment', 'description' => 'Pressure washers, carpet cleaners, vacuum cleaners, etc.'],
-            ['name' => 'Measuring Tools', 'description' => 'Laser levels, tape measures, moisture meters, etc.'],
-            ['name' => 'DIY & Craft Tools', 'description' => 'Heat guns, glue guns, rotary tools, etc.'],
-            ['name' => 'Electrical & Plumbing Equipment', 'description' => 'Wire strippers, pipe cutters, crimping tools, etc.'],
-            ['name' => 'Safety Gear', 'description' => 'Hard hats, safety harnesses, goggles, gloves, etc.'],
-            ['name' => 'Specialty Tools', 'description' => 'Tile cutters, drywall lifters, floor sanders, etc.'],
+            ['category_name' => 'Classic', 'description' => 'Traditional favorites everyone loves'],
+            ['category_name' => 'Gourmet', 'description' => 'Premium and specialty items'],
+            ['category_name' => 'Bars and Squares', 'description' => 'Delightful baked treats'],
+            ['category_name' => 'Sundaes', 'description' => 'Ice cream specialties'],
+            ['category_name' => 'Milkshakes', 'description' => 'Creamy blended beverages'],
+            ['category_name' => 'Gift Box', 'description' => 'Perfect for special occasions']
         ];
 
         // insert to category table
