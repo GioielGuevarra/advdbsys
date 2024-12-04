@@ -15,22 +15,18 @@ defineProps({ category: String, currentPage: String });
 	<Breadcrumb>
 		<BreadcrumbList>
 			<BreadcrumbItem>
-				<BreadcrumbLink :href="route('home')"> Home </BreadcrumbLink>
+				<BreadcrumbLink :href="route('home')">Home</BreadcrumbLink>
 			</BreadcrumbItem>
 
 			<BreadcrumbSeparator />
 
-			<BreadcrumbItem>
-				<BreadcrumbLink :href="route('explore')"> Explore </BreadcrumbLink>
+			<BreadcrumbItem v-if="category">
+				<BreadcrumbLink :href="route('category.show', category)">
+					{{ category }}
+				</BreadcrumbLink>
 			</BreadcrumbItem>
 
-			<BreadcrumbSeparator />
-
-			<BreadcrumbItem>
-				<BreadcrumbLink :href="route('explore')"> {{ category }} </BreadcrumbLink>
-			</BreadcrumbItem>
-
-			<BreadcrumbSeparator />
+			<BreadcrumbSeparator v-if="category" />
 
 			<BreadcrumbItem>
 				<BreadcrumbPage>{{ currentPage }}</BreadcrumbPage>

@@ -5,61 +5,39 @@ import { router } from "@inertiajs/vue3";
 const params = route().params;
 
 defineProps({
-	listing: Object,
+	product: Object,
 });
 
 const selectUser = (id) => {
-	router.get(route('home'), {
+	router.get(router("home"), {
 		// this should redirect to a dedicated profile page for that user
 		user_id: id,
-	})
-}
+	});
+};
 </script>
 
 <template>
-	<Link :href="route('listing.show', listing.id)">
-		<!-- image -->
-		<div class="relative overflow-hidden">
-			<img
-				:src="
-					listing.images.length
-						? `/storage/${listing.images[0].image_path}`
-						: '/storage/images/listing/default.png'
-				"
-				alt=""
-				class="object-cover object-center w-full rounded-md aspect-[4/3] lg:aspect-auto lg:h-60"
-			/>
-
-			<!-- overlay -->
+	<Link :href="route('product.show', product.product_id)">
+		<div class="group relative">
 			<div
-				class="absolute inset-0 rounded-md bg-gradient-to-t from-black/95 to-transparent"
-			></div>
-
-			<!-- daily rate -->
-			<div class="absolute px-3 py-1 text-sm font-medium text-slate-100 bottom-2 right-2">
-				₱{{listing.price}}/day
+				class="aspect-h-1 aspect-w-1 lg:aspect-none group-hover:opacity-75 lg:h-80 bg-muted w-full overflow-hidden rounded-lg"
+			>
+				<img
+					:src="product.product_image"
+					:alt="product.product_name"
+					class="lg:h-full lg:w-full object-cover object-center w-full h-full"
+				/>
 			</div>
-		</div>
-
-		<!-- details -->
-		<div class="mt-2 space-y-2">
-			<h3 class="text-sm font-medium line-clamp-1">
-				{{ listing.title }}
-			</h3>
-
-            <!-- owner and location -->
-			<p class="text-xs text-muted-foreground">
-				Listed By
-				<Link
-					@click="selectUser(listing.user.id)"
-					:href="route('home')"
-					class="hover:text-foreground underline-offset-4 hover:underline"
-				>
-					{{ listing.user.name }}
-				</Link>
-
-                <p class="flex items-center gap-1">Baliwasan, ZC</p>
-			</p>
+			<div class="flex justify-between mt-4">
+				<div>
+					<h3 class="text-foreground text-sm font-medium">
+						<span aria-hidden="true" class="absolute inset-0" />
+						{{ product.product_name }}
+					</h3>
+					<p class="text-muted-foreground mt-1 text-sm">{{ product.description }}</p>
+				</div>
+				<p class="text-primary text-sm font-medium">₱{{ product.price }}</p>
+			</div>
 		</div>
 	</Link>
 </template>

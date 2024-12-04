@@ -14,6 +14,6 @@ defineProps({
 	<div class="space-y-5">
 		<UpdateInfo :user="user" :status="status" />
 		<UpdatePassword />
-		<DeleteAccount />
+		<!-- <DeleteAccount /> -->
 	</div>
 </template>
