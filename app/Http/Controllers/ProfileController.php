@@ -6,7 +6,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ProfileController extends Controller
@@ -18,24 +17,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function updateInfo(Request $request) {
-        $fields = $request->validate([
-            'name' => ['required', 'max:255'],
-            'email' => ['required', 'email', 'max:255',
-            Rule::unique(User::class)->ignore($request->user()->id)]
-        ]);
-
-        $request->user()->fill($fields);
-
-        // check if email is modified
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->save();
-
-        return redirect()->route('profile.edit');
-    }
+    // Remove updateInfo method as it's no longer needed
 
     public function updatePassword(Request $request) {
         $fields = $request->validate([
@@ -64,6 +46,7 @@ class ProfileController extends Controller
         
         Auth::logout();
 
+        // The delete method will now handle nulling sensitive data and soft deleting
         $user->delete();
 
         $request->session()->invalidate();

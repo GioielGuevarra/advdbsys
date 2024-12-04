@@ -38,6 +38,6 @@ Route::middleware('auth')->group(function() {
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])->middleware('throttle:6,1')->name('verification.send');
 
     // password confirmation
-    Route::get('/confirm-password', [ConfirmPasswordController::class, 'create'])->name('password.confirm');
-    Route::post('/confirm-password', [ConfirmPasswordController::class, 'store'])->middleware('throttle:6,1')->name('password.confirm');
+    Route::get('/confirm-password', [ConfirmPasswordController::class, 'create'])->name('auth.password.confirm');
+    Route::post('/confirm-password', [ConfirmPasswordController::class, 'store'])->middleware('throttle:6,1');
 });

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->boolean('is_customer')->default(false);
             $table->boolean('is_admin')->default(false);
             $table->boolean('is_staff')->default(false);
+            $table->boolean('is_banned')->default(false); 
             $table->timestamps();
         });
     }

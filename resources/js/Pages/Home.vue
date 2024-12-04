@@ -1,41 +1,48 @@
 <script setup>
 import ItemCard from "@/Components/ItemCard.vue";
 import { Separator } from "@/components/ui/separator";
-import CTAHome from "@/Components/CTAHome.vue";
+import Hero from "@/Components/Hero.vue";
 
 defineProps({
-	listings: Array,
-	CTAImage: String,
+	products: Array,
+	categories: Array,
+	heroImage: String,
 });
 </script>
 
 <template>
 	<Head title="| Home" />
-
 	<div class="space-y-12">
-		<!-- CTA -->
-		<CTAHome :CTAImage="CTAImage" />
+		<!-- Hero Section -->
+		<Hero :heroImage="heroImage" />
 
-		<!-- popular tools -->
-		<div>
+		<!-- Product Categories -->
+		<div v-for="category in categories" :key="category.category_id">
 			<div class="flex items-center justify-between">
 				<div class="space-y-1">
-					<h2 class="text-2xl font-semibold tracking-tight">All Products</h2>
-					<p class="text-sm text-muted-foreground">
-						Discover Meliora's whole menu.
+					<h2 class="text-2xl font-semibold tracking-tight">
+						{{ category.category_name }}
+					</h2>
+					<p class="text-muted-foreground text-sm">
+						{{ category.description }}
 					</p>
 				</div>
 			</div>
 
 			<Separator class="my-4" />
 
-			<div v-if="listings.length">
+			<!-- Products Grid -->
+			<div
+				v-if="products.length"
+				class="gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8 grid grid-cols-1"
+			>
 				<div
-					class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-y-6 xl:gap-6 xl:gap-y-8 auto-rows-fr"
+					v-for="product in products.filter((p) =>
+						p.categories.some((c) => c.category_id === category.category_id)
+					)"
+					:key="product.product_id"
 				>
-					<div v-for="listing in listings" :key="listing.id">
-						<ItemCard :listing="listing" />
-					</div>
+					<ItemCard :product="product" />
 				</div>
 			</div>
 		</div>

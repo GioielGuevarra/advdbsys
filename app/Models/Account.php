@@ -16,12 +16,22 @@ class Account extends Model
         'role',
         'is_customer',
         'is_admin',
-        'is_staff'
+        'is_staff',
+        'is_banned'
+    ];
+
+    protected $casts = [
+        'is_banned' => 'boolean'
     ];
 
     public function orders()
     {
         return $this->hasMany(Order::class, 'account_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'email', 'email');
     }
 
 }

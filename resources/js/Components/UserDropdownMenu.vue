@@ -23,7 +23,7 @@ const user = computed(() => usePage().props.auth.user);
 				<img
 					src="https://picsum.photos/200"
 					alt="Profile Picture"
-					class="h-5 w-5 rounded-full"
+					class="w-5 h-5 rounded-full"
 				/>
 				<span class="sr-only">Toggle user menu</span>
 			</Button>
@@ -32,11 +32,13 @@ const user = computed(() => usePage().props.auth.user);
 		<DropdownMenuContent class="min-w-40" align="end">
 			<DropdownMenuLabel
 				>{{ user.name }}
-				<p class="text-xs mt-1 leading-none text-muted-foreground">{{ user.email }}</p>
+				<p class="text-muted-foreground mt-1 text-xs leading-none">{{ user.email }}</p>
 			</DropdownMenuLabel>
 			<DropdownMenuSeparator />
 			<DropdownMenuItem as-child routeName="profile.edit">Profile </DropdownMenuItem>
-			<DropdownMenuItem as-child routeName="home">Test Link </DropdownMenuItem>
+			<DropdownMenuItem as-child routeName="order.history"
+				>Order History
+			</DropdownMenuItem>
 			<DropdownMenuSeparator />
 			<DropdownMenuItem as-child routeName="logout" method="post"
 				>Logout

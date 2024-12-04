@@ -17,8 +17,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CategorySeeder::class,
             ProductSeeder::class,
-            AccountSeeder::class,  // Added for staff accounts
-            ProductItemSeeder::class,  // Added for inventory
+            AdminSeeder::class,     // Create admin first
+            AccountSeeder::class,   // Then create staff
+            DemoDataSeeder::class,  // Then create customer data
+            ProductItemSeeder::class,
         ]);
     }
 }

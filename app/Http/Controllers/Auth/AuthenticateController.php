@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use App\Http\Controllers\CartController;
+use App\Models\User;
 
 use function Laravel\Prompts\error;
 
@@ -17,30 +20,61 @@ class AuthenticateController extends Controller
         ]);
     }
 
-    public function store(Request $request) {
+    public function store(Request $request) 
+    {
         $credentials = $request->validate([
-            'email' => 'required|email', // validate more
+            'email' => 'required|email',
             'password' => 'required'
         ]);
 
+        // Check if user is banned before attempting login
+        $user = User::where('email', $credentials['email'])->first();
+        if ($user && $user->account && $user->account->is_banned) {
+            return back()->withErrors([
+                'failed' => 'This account has been banned. Please contact support.'
+            ]);
+        }
+
         if(Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            
+            $user = Auth::user();
+            
+            if (!$user || !$user->account) {
+                Auth::logout();
+                return back()->withErrors([
+                    'failed' => 'Account not found.'
+                ]);
+            }
 
-            return redirect()->intended();
-        } else {
-            return back()->withErrors([
-                'failed' => 'The provided credentials do not match our records.'
+            // Add debugging
+            Log::info('User login attempt', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'is_admin' => $user->account->is_admin,
+                'is_staff' => $user->account->is_staff,
+                'role' => $user->account->role
             ]);
-            // return back();
+
+            // Make role check more explicit
+            if ($user->account->role === 'admin' || $user->account->role === 'staff') {
+                return redirect()->intended(route('admin.dashboard'));
+            }
+
+            return redirect()->intended(route('home'));
         }
+
+        return back()->withErrors([
+            'failed' => 'Invalid credentials.'
+        ]);
     }
 
     public function destroy(Request $request) {
-        Auth::logout();
-
+        Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('home');
+        // clear cart state on client side
+        return redirect('/')->with('cart_reset', true);
     }
 }
