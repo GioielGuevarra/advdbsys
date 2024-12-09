@@ -1,9 +1,6 @@
 <script setup>
 import NavLink from "../Components/NavLink.vue";
-import { Button } from "@/components/ui/button";
-import Logo from "../Components/Logo.vue";
 import {
-	Bell,
 	HeartHandshake,
 	Gift,
 	GlassWater,
@@ -12,8 +9,14 @@ import {
 	Sparkles,
 	Shapes,
 	HandCoins,
+	Coffee,
+	Cookie,
+	IceCream,
+	Candy,
+	Pizza,
+	Cake,
 } from "lucide-vue-next";
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 
 const theme = ref(document.body.getAttribute("data-theme"));
 
@@ -36,6 +39,38 @@ onMounted(() => {
 		observer.disconnect();
 	});
 });
+
+const props = defineProps({
+	categories: {
+		type: Array,
+		default: () => [], // Add default value to prevent undefined errors
+	},
+});
+
+// Define fixed category icons mapping
+const fixedCategoryIcons = {
+	Classic: HeartHandshake,
+	Gourmet: Sparkles,
+	"Bars and Squares": CakeSlice,
+	Sundaes: Dessert,
+	Milkshakes: GlassWater,
+	"Gift Box": Gift,
+};
+
+// Create array of icons for random assignment (exclude the ones used in fixed mapping)
+const randomIcons = [Coffee, Cookie, IceCream, Candy, Pizza, Cake];
+
+// Update the icon mapping function
+const getCategoryIcon = (categoryName) => {
+	// First check if category has a fixed icon
+	if (fixedCategoryIcons[categoryName]) {
+		return fixedCategoryIcons[categoryName];
+	}
+
+	// If not, assign a random icon consistently
+	const index = categoryName.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+	return randomIcons[index % randomIcons.length];
+};
 </script>
 
 <template>
@@ -49,10 +84,6 @@ onMounted(() => {
 				<Link :href="route('home')" class="flex items-center gap-2 font-semibold">
 					<span>MELIORAE</span>
 				</Link>
-				<!-- <Button variant="outline" size="icon" class="w-8 h-8 ml-auto">
-                    <Bell class="w-4 h-4" />
-                    <span class="sr-only">Toggle notifications</span>
-                </Button> -->
 			</div>
 
 			<!-- sidebar navigation -->
@@ -69,75 +100,17 @@ onMounted(() => {
 					</NavLink>
 
 					<NavLink
-						:href="route('category.show', 'Classic')"
+						v-for="category in categories"
+						:key="category.category_id"
+						:href="route('category.show', { category: category.category_name })"
 						componentName="Category/Show"
 						:isActive="
 							$page.component === 'Category/Show' &&
-							$page.props.currentCategory === 'Classic'
+							$page.props.currentCategory === category.category_name
 						"
 					>
-						<HeartHandshake class="w-5 h-5" />
-						Classic
-					</NavLink>
-
-					<NavLink
-						:href="route('category.show', 'Gourmet')"
-						componentName="Category/Show"
-						:isActive="
-							$page.component === 'Category/Show' &&
-							$page.props.currentCategory === 'Gourmet'
-						"
-					>
-						<Sparkles class="w-5 h-5" />
-						Gourmet
-					</NavLink>
-
-					<NavLink
-						:href="route('category.show', 'Bars and Squares')"
-						componentName="Category/Show"
-						:isActive="
-							$page.component === 'Category/Show' &&
-							$page.props.currentCategory === 'Bars and Squares'
-						"
-					>
-						<CakeSlice class="w-5 h-5" />
-						Bars and Squares
-					</NavLink>
-
-					<NavLink
-						:href="route('category.show', 'Sundaes')"
-						componentName="Category/Show"
-						:isActive="
-							$page.component === 'Category/Show' &&
-							$page.props.currentCategory === 'Sundaes'
-						"
-					>
-						<Dessert class="w-5 h-5" />
-						Sundaes
-					</NavLink>
-
-					<NavLink
-						:href="route('category.show', 'Milkshakes')"
-						componentName="Category/Show"
-						:isActive="
-							$page.component === 'Category/Show' &&
-							$page.props.currentCategory === 'Milkshakes'
-						"
-					>
-						<GlassWater class="w-5 h-5" />
-						Milkshakes
-					</NavLink>
-
-					<NavLink
-						:href="route('category.show', 'Gift Box')"
-						componentName="Category/Show"
-						:isActive="
-							$page.component === 'Category/Show' &&
-							$page.props.currentCategory === 'Gift Box'
-						"
-					>
-						<Gift class="w-5 h-5" />
-						Custom Gift Box
+						<component :is="getCategoryIcon(category.category_name)" class="w-5 h-5" />
+						{{ category.category_name }}
 					</NavLink>
 				</nav>
 			</div>

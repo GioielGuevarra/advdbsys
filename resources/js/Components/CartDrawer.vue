@@ -89,7 +89,7 @@ defineExpose({ fetchCart });
 				<div v-if="cart?.items?.length" class="flex-1 overflow-y-auto py-6 space-y-4">
 					<div v-for="item in cart.items" :key="item.cart_item_id" class="flex gap-4">
 						<img
-							:src="item.product.product_image"
+							:src="item.product.product_image_url"
 							:alt="item.product.product_name"
 							class="h-20 w-20 rounded object-cover"
 						/>

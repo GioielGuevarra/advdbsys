@@ -34,7 +34,7 @@ class ProductController extends Controller
                 'name' => $product->product_name,
                 'description' => $product->description,
                 'price' => $product->price,
-                'image' => asset('storage/' . $product->product_image), // Add asset() helper
+                'image' => $product->product_image_url,
                 'categories' => $product->categories->map(fn($category) => [
                     'id' => $category->category_id,
                     'name' => $category->category_name,
@@ -58,36 +58,34 @@ class ProductController extends Controller
             'product_name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
-            'categories' => 'required|array|min:1',
+            'category' => 'required|exists:categories,category_id', 
             'image' => 'required|image|max:2048', // 2MB max
-            'quantity' => 'required|integer|min:0',
+            'quantity' => 'required|integer|min:1',
             'expiration_date' => 'required|date|after:today',
         ]);
 
-        // Convert category IDs to integers
-        $categoryIds = array_map('intval', $validated['categories']);
-
-        $imagePath = $request->file('image')->store('products', 'public');
-
-        // Start transaction
-        \DB::beginTransaction();
-
         try {
-            // Create product
+            // Store image and get filename
+            $imagePath = $request->file('image')->store('products', 'public');
+            $filename = basename($imagePath);
+
+            \DB::beginTransaction();
+
+            // Create product with the filename
             $product = Product::create([
                 'product_name' => $validated['product_name'],
                 'description' => $validated['description'],
                 'price' => $validated['price'],
-                'product_image' => $imagePath
+                'product_image' => $filename  // Just the filename
             ]);
 
-            // Attach categories
-            $product->categories()->attach($categoryIds);
+            // Attach single category
+            $product->categories()->attach($validated['category']);
 
             // Create initial inventory
             ProductItem::create([
                 'product_id' => $product->product_id,
-                'batch_number' => 'BTH-' . strtoupper(str_pad($product->product_id, 6, '0', STR_PAD_LEFT)),
+                'batch_number' => 'BTH-' . strtoupper(str_pad($product->product_id, 6, '0', STR_PAD_LEFT)) . '-' . now()->format('Ymd'),
                 'expiration_date' => $validated['expiration_date'],
                 'quantity' => $validated['quantity'],
                 'status' => 'in_stock',
@@ -98,8 +96,11 @@ class ProductController extends Controller
             return redirect()->back()->with('success', 'Product created successfully');
         } catch (\Exception $e) {
             \DB::rollBack();
-            Storage::disk('public')->delete($imagePath);
-            return redirect()->back()->with('error', 'Failed to create product');
+            // Clean up the uploaded image if it exists
+            if (isset($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
+            }
+            return redirect()->back()->with('error', 'Failed to create product: ' . $e->getMessage());
         }
     }
 
@@ -108,27 +109,41 @@ class ProductController extends Controller
         $validated = $request->validate([
             'product_name' => 'required|string|max:255',
             'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'categories' => 'required|array|min:1',
-            'image' => 'nullable|image|max:2048',
+            'price' => 'required|numeric|min:0.01',
+            'category' => 'required|exists:categories,category_id',
+            'image' => 'nullable|image|max:2048', // Make image optional
         ]);
 
-        \DB::beginTransaction();
-
         try {
+            \DB::beginTransaction();
+
+            $updateData = [
+                'product_name' => $validated['product_name'],
+                'description' => $validated['description'],
+                'price' => $validated['price'],
+            ];
+
+            // Handle image update if provided
             if ($request->hasFile('image')) {
-                // Delete old image
-                Storage::disk('public')->delete($product->product_image);
-                $validated['product_image'] = $request->file('image')->store('products', 'public');
+                // Delete old image if it exists
+                if ($product->product_image) {
+                    Storage::disk('public')->delete('products/' . $product->product_image);
+                }
+                $imagePath = $request->file('image')->store('products', 'public');
+                $updateData['product_image'] = basename($imagePath); // Store only the filename
             }
 
-            $product->update($validated);
-            $product->categories()->sync($validated['categories']);
+            $product->update($updateData);
+            $product->categories()->sync([$validated['category']]);
 
             \DB::commit();
             return redirect()->back()->with('success', 'Product updated successfully');
         } catch (\Exception $e) {
             \DB::rollBack();
+            // Delete newly uploaded image if it exists and update failed
+            if (isset($updateData['product_image'])) {
+                Storage::disk('public')->delete($updateData['product_image']);
+            }
             return redirect()->back()->with('error', 'Failed to update product');
         }
     }

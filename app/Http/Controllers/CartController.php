@@ -11,11 +11,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log; 
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use App\Traits\ChecksBannedUsers;
 
 class CartController extends Controller
 {
+    use ChecksBannedUsers;
+
     public function addToCart(Request $request)
     {
+        $this->checkIfBanned();
         try {
             $validated = $request->validate([
                 'product_id' => 'required|exists:products,product_id',
@@ -53,6 +57,7 @@ class CartController extends Controller
 
     public function removeFromCart(CartItem $cartItem)
     {
+        $this->checkIfBanned();
         try {
             $cartItem->delete();
             return response()->json(['success' => true]);
@@ -76,6 +81,12 @@ class CartController extends Controller
 
             // If request wants JSON (from axios/fetch)
             if (request()->wantsJson()) {
+                if ($cart) {
+                    // Make sure product image URLs are included
+                    $cart->items->each(function ($item) {
+                        $item->product->product_image_url = $item->product->product_image_url;
+                    });
+                }
                 return response()->json($cart ?? ['items' => []]);
             }
 
@@ -91,6 +102,7 @@ class CartController extends Controller
 
     public function updateQuantity(Request $request, CartItem $cartItem)
     {
+        $this->checkIfBanned();
         try {
             $validated = $request->validate([
                 'quantity' => 'required|integer|min:1'
@@ -109,6 +121,7 @@ class CartController extends Controller
 
     public function checkout()
     {
+        $this->checkIfBanned();
         try {
             $cart = Cart::with(['items.product'])
                 ->where('account_id', Auth::user()->account->account_id)
@@ -130,6 +143,7 @@ class CartController extends Controller
 
     public function processCheckout(Request $request)
     {
+        $this->checkIfBanned();
         try {
             Log::info('Starting checkout process', ['request' => $request->all()]);
 
@@ -173,11 +187,16 @@ class CartController extends Controller
             DB::beginTransaction(); // Start transaction
 
             try {
-                // Create order
+                // Convert pickup time to Asia/Manila before storing
+                $pickupTime = \Carbon\Carbon::parse($validated['pickup_time'])
+                    ->timezone('Asia/Manila')
+                    ->format('Y-m-d H:i:s');
+
+                // Create order with Manila time
                 $order = Order::create([
                     'account_id' => Auth::user()->account->account_id,
                     'total_amount' => $this->calculateTotal($cart),
-                    'pickup_time' => $validated['pickup_time'],
+                    'pickup_time' => $pickupTime, // Store as Manila time
                     'note' => $validated['note'],
                     'status' => 'pending'
                 ]);
@@ -234,28 +253,39 @@ class CartController extends Controller
             // Show tomorrow's slots
             $tomorrowStart = $currentTime->copy()
                 ->addDay()
+                ->setTimezone('Asia/Manila')
                 ->startOfDay()
                 ->setHour($businessStartHour);
             $tomorrowEnd = $tomorrowStart->copy()->setHour($businessEndHour);
             
             for ($date = $tomorrowStart; $date->lt($tomorrowEnd); $date->addHour()) {
                 $slots[] = [
-                    'value' => $date->timezone('UTC')->toISOString(),
+                    'value' => $date->copy()->setTimezone('UTC')->toISOString(),
                     'label' => $date->format('l, M j - g:i A')
                 ];
             }
         } else {
             // Show today's slots starting from business hours
-            $startDate = $currentTime->copy()->startOfDay()->setHour($businessStartHour); // Always start from 9 AM
+            $startDate = $currentTime->copy()
+                ->setTimezone('Asia/Manila')
+                ->startOfDay()
+                ->setHour($businessStartHour);
+                
             if ($currentTime->hour >= $businessStartHour) {
-                $startDate = $currentTime->copy()->addHour()->startOfHour(); // If during business hours, start from next hour
+                $startDate = $currentTime->copy()
+                    ->setTimezone('Asia/Manila')
+                    ->addHour()
+                    ->startOfHour();
             }
-            $endDate = $currentTime->copy()->setHour($businessEndHour);
+            
+            $endDate = $currentTime->copy()
+                ->setTimezone('Asia/Manila')
+                ->setHour($businessEndHour);
             
             for ($date = $startDate; $date->lt($endDate); $date->addHour()) {
                 $slots[] = [
-                    'value' => $date->timezone('UTC')->toISOString(),
-                    'label' => $date->timezone('Asia/Manila')->format('l, M j - g:i A')
+                    'value' => $date->copy()->setTimezone('UTC')->toISOString(),
+                    'label' => $date->format('l, M j - g:i A')
                 ];
             }
         }

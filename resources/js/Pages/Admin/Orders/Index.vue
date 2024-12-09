@@ -18,7 +18,18 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
-} from "@/components/ui/dialog/index.js";
+} from "@/Components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 defineOptions({ layout: AdminLayout });
 
@@ -32,6 +43,7 @@ const statusOptions = [
 	{ value: "all", label: "All Status" },
 	{ value: "pending", label: "Pending" },
 	{ value: "preparing", label: "Preparing" },
+	{ value: "ready", label: "Ready for Pickup" },
 	{ value: "completed", label: "Completed" },
 	{ value: "cancelled", label: "Cancelled" },
 ];
@@ -67,17 +79,87 @@ watch([search, status], () => {
 	updateFilters();
 });
 
-const updateOrderStatus = (orderId, newStatus) => {
+// Add new refs for confirmation dialog
+const showConfirmDialog = ref(false);
+const pendingStatusUpdate = ref(null);
+
+// Add a ref to store the original status
+const originalStatus = ref({});
+
+// Add this new ref to track displayed statuses
+const displayedStatuses = ref({});
+
+// Modify updateOrderStatus to handle confirmation
+const updateOrderStatus = (orderId, newStatus, currentOrder) => {
+	// If status is completed or cancelled, show confirmation
+	if (newStatus === "completed" || newStatus === "cancelled") {
+		// Store the original status
+		originalStatus.value[orderId] = currentOrder.status;
+		displayedStatuses.value[orderId] = currentOrder.status; // Keep original status displayed
+		// Revert the select value
+		currentOrder.status = originalStatus.value[orderId];
+		// Show confirmation
+		pendingStatusUpdate.value = { orderId, newStatus };
+		showConfirmDialog.value = true;
+		return;
+	}
+
+	// Otherwise proceed with update
+	processStatusUpdate(orderId, newStatus);
+};
+
+// Add new method to process the actual update
+const processStatusUpdate = (orderId, newStatus) => {
 	router.put(route("admin.orders.update", orderId), {
 		status: newStatus,
 	});
+	displayedStatuses.value[orderId] = newStatus; // Update displayed status
+	// Clear the stored original status
+	delete originalStatus.value[orderId];
+	showConfirmDialog.value = false;
+	pendingStatusUpdate.value = null;
 };
 
-const statusColors = {
-	pending: "bg-yellow-100 text-yellow-700",
-	preparing: "bg-blue-100 text-blue-700",
-	completed: "bg-emerald-100 text-emerald-700",
-	cancelled: "bg-red-100 text-red-700",
+// Add this computed/method to get the correct status to display
+const getDisplayStatus = (order) => {
+	return displayedStatuses.value[order.id] || order.status;
+};
+
+const getStatusVariant = (status) => {
+	// Convert status to lowercase for consistent comparison
+	status = status.toLowerCase();
+
+	// Return the exact variant name that matches our badge variants
+	switch (status) {
+		case "pending":
+			return "pending";
+		case "preparing":
+			return "preparing";
+		case "ready":
+			return "ready";
+		case "completed":
+			return "completed";
+		case "cancelled":
+			return "cancelled";
+		default:
+			return "secondary";
+	}
+};
+
+const getAvailableStatuses = (currentStatus) => {
+	// Define valid status transitions
+	const transitions = {
+		pending: ["preparing", "cancelled"],
+		preparing: ["ready", "cancelled"],
+		ready: ["completed", "cancelled"],
+		completed: [], // No further transitions allowed
+		cancelled: [], // No further transitions allowed
+	};
+
+	// Only return status options that are valid transitions
+	return statusOptions.filter((option) =>
+		transitions[currentStatus]?.includes(option.value)
+	);
 };
 
 const canUpdateStatus = (status) => {
@@ -121,38 +203,41 @@ const canUpdateStatus = (status) => {
 		<!-- Orders List -->
 		<Card v-for="order in orders.data" :key="order.id" class="overflow-hidden">
 			<CardHeader
-				class="sm:flex-row sm:items-center sm:justify-between bg-muted/50 flex flex-col gap-4"
+				class="sm:flex-row sm:items-start sm:justify-between bg-muted/50 flex flex-col gap-4"
 			>
-				<div>
-					<CardTitle class="text-base">Order #{{ order.orderNumber }}</CardTitle>
-					<p class="text-muted-foreground text-sm">{{ order.createdAt }}</p>
-				</div>
-				<div class="flex flex-wrap items-center gap-2">
-					<span
-						:class="[
-							'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-							statusColors[order.status],
-						]"
-					>
+				<div class="space-y-2">
+					<Badge :variant="getStatusVariant(order.status)" class="capitalize">
 						{{ order.status }}
-					</span>
+					</Badge>
+					<div>
+						<CardTitle class="text-base">Order #{{ order.orderNumber }}</CardTitle>
+						<p class="text-muted-foreground text-sm">{{ order.createdAt }}</p>
+					</div>
+				</div>
+				<div>
 					<Select
-						v-model="order.status"
-						@update:modelValue="(newStatus) => updateOrderStatus(order.id, newStatus)"
+						:model-value="getDisplayStatus(order)"
+						@update:model-value="
+							(newStatus) => updateOrderStatus(order.id, newStatus, order)
+						"
 						:disabled="!canUpdateStatus(order.status)"
 					>
 						<SelectTrigger class="h-8">
-							<SelectValue
-								:placeholder="
-									canUpdateStatus(order.status) ? 'Update status' : 'Status locked'
-								"
-							/>
+							<SelectValue>
+								{{
+									statusOptions.find((s) => s.value === getDisplayStatus(order))?.label ||
+									order.status
+								}}
+							</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="pending">Mark as Pending</SelectItem>
-							<SelectItem value="preparing">Mark as Preparing</SelectItem>
-							<SelectItem value="completed">Mark as Completed</SelectItem>
-							<SelectItem value="cancelled">Mark as Cancelled</SelectItem>
+							<SelectItem
+								v-for="option in getAvailableStatuses(order.status)"
+								:key="option.value"
+								:value="option.value"
+							>
+								{{ option.label }}
+							</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
@@ -184,23 +269,27 @@ const canUpdateStatus = (status) => {
 						<DialogTrigger asChild>
 							<Button variant="outline" size="sm">View Items</Button>
 						</DialogTrigger>
-						<DialogContent>
-							<DialogHeader>
+						<DialogContent
+							class="sm:max-w-[425px] grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90dvh]"
+						>
+							<DialogHeader class="p-6 pb-0">
 								<DialogTitle>Order Items</DialogTitle>
 							</DialogHeader>
-							<div class="space-y-4">
-								<div
-									v-for="item in order.items"
-									:key="item.name"
-									class="flex justify-between gap-4"
-								>
-									<div>
-										<p class="font-medium">{{ item.name }}</p>
-										<p class="text-muted-foreground text-sm">
-											Quantity: {{ item.quantity }}
-										</p>
+							<div class="px-6 py-4 overflow-y-auto">
+								<div class="space-y-4">
+									<div
+										v-for="item in order.items"
+										:key="item.name"
+										class="flex justify-between gap-4"
+									>
+										<div>
+											<p class="font-medium">{{ item.name }}</p>
+											<p class="text-muted-foreground text-sm">
+												Quantity: {{ item.quantity }}
+											</p>
+										</div>
+										<p class="text-sm">₱{{ item.total.toLocaleString() }}</p>
 									</div>
-									<p class="text-sm">₱{{ item.total.toLocaleString() }}</p>
 								</div>
 							</div>
 						</DialogContent>
@@ -214,4 +303,40 @@ const canUpdateStatus = (status) => {
 			<!-- Add pagination component -->
 		</div>
 	</div>
+
+	<!-- Add confirmation dialog -->
+	<AlertDialog :open="showConfirmDialog" @update:open="showConfirmDialog = false">
+		<AlertDialogContent>
+			<AlertDialogHeader>
+				<AlertDialogTitle>Confirm Status Update</AlertDialogTitle>
+				<AlertDialogDescription>
+					Are you sure you want to mark this order as
+					{{ pendingStatusUpdate?.newStatus }}? This action cannot be undone.
+				</AlertDialogDescription>
+			</AlertDialogHeader>
+			<AlertDialogFooter>
+				<AlertDialogCancel
+					@click="
+						showConfirmDialog = false;
+						if (pendingStatusUpdate) {
+							displayedStatuses.value[pendingStatusUpdate.orderId] =
+								originalStatus.value[pendingStatusUpdate.orderId];
+						}
+					"
+				>
+					Cancel
+				</AlertDialogCancel>
+				<AlertDialogAction
+					@click="
+						processStatusUpdate(
+							pendingStatusUpdate.orderId,
+							pendingStatusUpdate.newStatus
+						)
+					"
+				>
+					Confirm
+				</AlertDialogAction>
+			</AlertDialogFooter>
+		</AlertDialogContent>
+	</AlertDialog>
 </template>

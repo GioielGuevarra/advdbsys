@@ -27,14 +27,6 @@ class AuthenticateController extends Controller
             'password' => 'required'
         ]);
 
-        // Check if user is banned before attempting login
-        $user = User::where('email', $credentials['email'])->first();
-        if ($user && $user->account && $user->account->is_banned) {
-            return back()->withErrors([
-                'failed' => 'This account has been banned. Please contact support.'
-            ]);
-        }
-
         if(Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
             

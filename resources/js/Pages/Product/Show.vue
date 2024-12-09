@@ -12,6 +12,8 @@ import {
 	NumberFieldIncrement,
 } from "@/components/ui/number-field";
 import { ref } from "vue";
+import { useToast } from "@/Components/ui/toast/use-toast";
+import { Toaster } from "@/components/ui/toast";
 
 const props = defineProps({
 	product: Object,
@@ -25,6 +27,8 @@ const form = useForm({
 
 const cart = ref(null);
 
+const { toast } = useToast();
+
 const addToCart = () => {
 	form.post(route("cart.add"), {
 		onSuccess: () => {
@@ -32,6 +36,8 @@ const addToCart = () => {
 			toast({
 				title: "Success",
 				description: "Item added to cart",
+				variant: "success",
+				duration: 3000,
 			});
 		},
 		onError: () => {
@@ -39,6 +45,7 @@ const addToCart = () => {
 				title: "Error",
 				description: "Could not add item to cart",
 				variant: "destructive",
+				duration: 3000,
 			});
 		},
 	});
@@ -118,4 +125,5 @@ const addToCart = () => {
 			</div>
 		</div>
 	</div>
+	<Toaster />
 </template>

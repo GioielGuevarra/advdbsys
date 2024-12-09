@@ -24,4 +24,13 @@ class Product extends Model
     {
         return $this->hasMany(ProductItem::class, 'product_id');
     }
+
+    // Add a new accessor for the product image URL
+    public function getProductImageUrlAttribute()
+    {
+        if (!$this->product_image) {
+            return asset('storage/products/default.jpg');
+        }
+        return asset('storage/products/' . $this->product_image);
+    }
 }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('total_amount', 10, 2);
             $table->dateTime('pickup_time');
             $table->text('note')->nullable();
-            $table->enum('status', ['pending', 'preparing', 'completed', 'cancelled'])->default('pending');
+            $table->enum('status', ['pending', 'preparing', 'ready', 'completed', 'cancelled'])->default('pending');
             $table->timestamps();
     
             $table->foreign('account_id')->references('account_id')->on('accounts')->onDelete('cascade');

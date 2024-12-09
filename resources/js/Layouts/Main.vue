@@ -15,19 +15,25 @@ import CartDrawer from "../Components/CartDrawer.vue";
 const params = route().params;
 // searchTerm is automatically passed from controller->view->layout
 
-const props = defineProps({ searchTerm: String });
+const props = defineProps({ searchTerm: String, categories: Array });
 
 const form = useForm({
 	search: props.searchTerm || "",
 });
 
-// Replace the search function with event emission
+// Replace the search function with direct router navigation
 const search = (e) => {
 	e.preventDefault();
-	document.dispatchEvent(
-		new CustomEvent("search-products", {
-			detail: form.search,
-		})
+	router.get(
+		route("home"),
+		{
+			search: form.search,
+		},
+		{
+			preserveState: true,
+			preserveScroll: true,
+			replace: true,
+		}
 	);
 };
 
@@ -44,7 +50,7 @@ router.on("finish", () => {
 	<!-- layout wrapper -->
 	<div class="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr]">
 		<!-- main sidebar -->
-		<Sidebar />
+		<Sidebar :categories="categories" />
 
 		<!-- main content (1fr)-->
 		<div class="flex flex-col">
@@ -54,7 +60,7 @@ router.on("finish", () => {
 					class="mx-auto flex h-14 max-w-screen-2xl items-center gap-4 px-6 lg:h-[60px]"
 				>
 					<!-- Mobile Sidebar -->
-					<MobileSidebar />
+					<MobileSidebar :categories="categories" />
 
 					<!-- Search Bar -->
 					<div class="flex-1">
