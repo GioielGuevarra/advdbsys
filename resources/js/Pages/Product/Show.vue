@@ -64,7 +64,11 @@ const addToCart = () => {
 			<!-- Product Image -->
 			<div class="aspect-square bg-muted overflow-hidden rounded-lg">
 				<img
-					:src="product.product_image"
+					:src="
+						product.product_image
+							? `/storage/products/${product.product_image}`
+							: '/storage/products/default.png'
+					"
 					:alt="product.product_name"
 					class="object-cover object-center w-full h-full"
 				/>

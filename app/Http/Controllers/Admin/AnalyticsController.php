@@ -13,7 +13,6 @@ class AnalyticsController extends Controller
     public function index()
     {
         try {
-            // Get monthly revenue data
             $monthlyRevenue = Order::select(
                 DB::raw('SUM(total_amount) as revenue'),
                 DB::raw("DATE_FORMAT(created_at, '%b %Y') as month")
