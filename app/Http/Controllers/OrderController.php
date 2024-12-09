@@ -6,11 +6,15 @@ use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use App\Traits\ChecksBannedUsers;
 
 class OrderController extends Controller
 {
+    use ChecksBannedUsers;
+
     public function index()
     {
+        $this->checkIfBanned();
         $orders = Order::with(['items.product'])
             ->where('account_id', Auth::user()->account->account_id)
             ->orderBy('created_at', 'desc')
@@ -28,7 +32,7 @@ class OrderController extends Controller
                         'quantity' => $item->quantity,
                         'price' => $item->price,
                         'total' => $item->price * $item->quantity,
-                        'image' => $item->product->product_image
+                        'product_image_url' => $item->product->product_image_url
                     ]),
                     'note' => $order->note,
                     'canCancel' => $order->status === 'pending',
@@ -42,6 +46,7 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
+        $this->checkIfBanned();
         $order->load(['items.product', 'account']);
 
         if ($order->account_id !== Auth::user()->account->account_id) {
@@ -61,7 +66,7 @@ class OrderController extends Controller
                     'quantity' => $item->quantity,
                     'price' => $item->price,
                     'total' => $item->price * $item->quantity,
-                    'image' => $item->product->product_image
+                    'product_image_url' => $item->product->product_image_url // Changed this line
                 ])
             ]
         ]);
@@ -69,6 +74,7 @@ class OrderController extends Controller
 
     public function cancel(Order $order)
     {
+        $this->checkIfBanned();
         if ($order->account_id !== Auth::user()->account->account_id) {
             abort(403, 'Unauthorized action.');
         }

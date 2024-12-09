@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
 	Select,
 	SelectContent,
@@ -23,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { ref, watch, computed } from "vue";
 import { useForm } from "@inertiajs/vue3";
-import { useToast } from "@/components/ui/toast/use-toast";
+import { useToast } from "@/Components/ui/toast/use-toast";
 import { Toaster } from "@/components/ui/toast";
 
 defineOptions({ layout: AdminLayout });
@@ -41,7 +40,7 @@ const form = useForm({
 	product_name: "",
 	description: "",
 	price: "",
-	categories: [],
+	category: "", // Changed from categories array to single category
 	image: null,
 	quantity: 1,
 	expiration_date: "",
@@ -57,6 +56,16 @@ const showInventoryDialog = ref(false);
 const selectedProduct = ref(null);
 const showDeleteDialog = ref(false);
 const productToDelete = ref(null);
+
+// Add these new form and dialog refs after other refs
+const showEditDialog = ref(false);
+const editForm = useForm({
+	product_name: "",
+	description: "",
+	price: "",
+	category: "", // Add category field
+	image: null, // Add new image field
+});
 
 function debounce(fn, delay) {
 	let timeoutId;
@@ -100,7 +109,8 @@ const submitProduct = () => {
 		!form.description ||
 		!form.price ||
 		!form.image ||
-		!form.expiration_date
+		!form.expiration_date ||
+		!form.category
 	) {
 		toast({
 			title: "Error",
@@ -110,10 +120,20 @@ const submitProduct = () => {
 		return;
 	}
 
-	if (!form.categories.length) {
+	// Add validation for positive numbers
+	if (form.price <= 0) {
 		toast({
 			title: "Error",
-			description: "Please select at least one category",
+			description: "Price must be greater than 0",
+			variant: "destructive",
+		});
+		return;
+	}
+
+	if (form.quantity < 1) {
+		toast({
+			title: "Error",
+			description: "Initial stock must be at least 1",
 			variant: "destructive",
 		});
 		return;
@@ -143,29 +163,121 @@ const submitProduct = () => {
 const updateInventory = () => {
 	if (!selectedProduct.value) return;
 
+	// Add validation
+	if (!inventoryForm.quantity || !inventoryForm.expiration_date) {
+		toast({
+			title: "Error",
+			description: "Please fill in both quantity and expiration date",
+			variant: "destructive",
+			duration: 3000,
+		});
+		return;
+	}
+
+	if (inventoryForm.quantity < 1) {
+		toast({
+			title: "Error",
+			description: "Quantity must be greater than 0",
+			variant: "destructive",
+			duration: 3000,
+		});
+		return;
+	}
+
+	const today = new Date().toISOString().split("T")[0];
+	if (inventoryForm.expiration_date <= today) {
+		toast({
+			title: "Error",
+			description: "Expiration date must be after today",
+			variant: "destructive",
+			duration: 3000,
+		});
+		return;
+	}
+
 	inventoryForm.post(route("admin.products.inventory.update", selectedProduct.value.id), {
 		onSuccess: () => {
+			toast({
+				title: "Success",
+				description: `Successfully added ${inventoryForm.quantity} units to ${selectedProduct.value.name}`,
+				variant: "success",
+				duration: 3000,
+			});
 			showInventoryDialog.value = false;
 			inventoryForm.reset();
 			selectedProduct.value = null;
+		},
+		onError: (errors) => {
+			toast({
+				title: "Error",
+				description: Object.values(errors)[0],
+				variant: "destructive",
+				duration: 3000,
+			});
 		},
 	});
 };
 
 const formatID = (id) => String(id); // Convert numbers to strings
 
-const toggleCategory = (categoryId) => {
-	const id = String(categoryId);
-	const index = form.categories.indexOf(id);
-	if (index === -1) {
-		form.categories.push(id);
-	} else {
-		form.categories.splice(index, 1);
-	}
-};
-
 // Add form error handling
 const hasErrors = computed(() => Object.keys(form.errors).length > 0);
+
+// Add this new method after other methods
+const editProduct = (product) => {
+	selectedProduct.value = product; // Store the selected product first
+	editForm.product_name = product.name;
+	editForm.description = product.description;
+	editForm.price = product.price;
+	editForm.category = product.categories[0]?.id.toString();
+	showEditDialog.value = true;
+};
+
+const updateProduct = () => {
+	if (!selectedProduct.value) return;
+
+	if (!editForm.product_name || !editForm.description || !editForm.category) {
+		toast({
+			title: "Error",
+			description: "Please fill all required fields",
+			variant: "destructive",
+		});
+		return;
+	}
+
+	if (editForm.price <= 0) {
+		toast({
+			title: "Error",
+			description: "Price must be greater than 0",
+			variant: "destructive",
+		});
+		return;
+	}
+
+	// Change to use router.post with _method: 'put'
+	router.post(route("admin.products.update", selectedProduct.value.id), {
+		_method: "put",
+		...editForm.data(),
+		preserveScroll: true,
+		onSuccess: () => {
+			toast({
+				title: "Success",
+				description: "Product updated successfully",
+				variant: "success",
+			});
+			showEditDialog.value = false;
+			selectedProduct.value = null;
+			editForm.reset();
+		},
+		onError: (errors) => {
+			toast({
+				title: "Error",
+				description: Object.values(errors)[0],
+				variant: "destructive",
+			});
+		},
+	});
+};
 </script>
 
 <template>
@@ -173,11 +285,11 @@ const hasErrors = computed(() => Object.keys(form.errors).length > 0);
 
 	<div class="space-y-6">
 		<!-- Header -->
-		<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+		<div class="sm:flex-row sm:items-center sm:justify-between flex flex-col gap-4">
 			<h2 class="text-2xl font-semibold">Products</h2>
 
 			<!-- Actions -->
-			<div class="flex flex-col gap-4 sm:flex-row">
+			<div class="sm:flex-row flex flex-col gap-4">
 				<Input
 					type="search"
 					placeholder="Search products..."
@@ -207,68 +319,95 @@ const hasErrors = computed(() => Object.keys(form.errors).length > 0);
 
 		<!-- Add Product Dialog -->
 		<Dialog v-model:open="showAddDialog">
-			<DialogContent class="sm:max-w-[500px]">
-				<DialogHeader>
+			<DialogContent
+				class="sm:max-w-[625px] grid-rows-[auto_minmax(0,1fr)_auto] p-0 max-h-[90dvh]"
+			>
+				<DialogHeader class="p-6 pb-0">
 					<DialogTitle>Add New Product</DialogTitle>
 				</DialogHeader>
-				<form @submit.prevent="submitProduct" class="space-y-4">
-					<div class="space-y-2">
-						<label>Product Name</label>
-						<Input v-model="form.product_name" />
-					</div>
-					<div class="space-y-2">
-						<label>Description</label>
-						<Textarea v-model="form.description" />
-					</div>
-					<div class="space-y-2">
-						<label>Price</label>
-						<Input type="number" step="0.01" v-model="form.price" />
-					</div>
-					<div class="space-y-2">
-						<label class="font-medium">Categories</label>
-						<p class="text-muted-foreground text-sm mb-3">
-							Select at least one category for your product.
-						</p>
-						<div class="grid sm:grid-cols-2 gap-4">
-							<div
-								v-for="category in categories"
-								:key="category.category_id"
-								class="flex items-center space-x-2"
-							>
-								<Checkbox
-									:id="`category-${category.category_id}`"
-									:checked="form.categories.includes(formatID(category.category_id))"
-									@update:checked="() => toggleCategory(category.category_id)"
+				<div class="px-6 py-4 overflow-y-auto">
+					<form @submit.prevent="submitProduct" class="space-y-6">
+						<div class="sm:grid-cols-2 grid gap-4">
+							<div class="sm:col-span-2 space-y-2">
+								<label>Product Name</label>
+								<Input v-model="form.product_name" />
+							</div>
+
+							<div class="sm:col-span-2 space-y-2">
+								<label>Description</label>
+								<Textarea v-model="form.description" />
+							</div>
+
+							<div class="sm:col-span-2 space-y-2">
+								<label>Category</label>
+								<Select v-model="form.category">
+									<SelectTrigger>
+										<SelectValue placeholder="Select a category" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem
+											v-for="category in categories"
+											:key="category.category_id"
+											:value="category.category_id.toString()"
+										>
+											{{ category.category_name }}
+										</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div class="space-y-2">
+								<label>Price</label>
+								<Input
+									type="number"
+									step="0.01"
+									min="0.01"
+									v-model="form.price"
+									@input="(e) => (form.price = Math.abs(parseFloat(e.target.value) || 0))"
 								/>
-								<label
-									:for="`category-${category.category_id}`"
-									class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-								>
-									{{ category.category_name }}
-								</label>
+							</div>
+
+							<div class="space-y-2">
+								<label>Initial Stock</label>
+								<Input
+									type="number"
+									min="1"
+									v-model="form.quantity"
+									@input="
+										(e) => (form.quantity = Math.abs(parseInt(e.target.value) || 1))
+									"
+								/>
+							</div>
+
+							<div class="sm:col-span-2 space-y-2">
+								<label>Product Image</label>
+								<Input
+									type="file"
+									accept="image/*"
+									@input="(e) => (form.image = e.target.files[0])"
+								/>
+							</div>
+
+							<div class="space-y-2">
+								<label>Expiration Date</label>
+								<Input
+									type="date"
+									v-model="form.expiration_date"
+									:min="new Date().toISOString().split('T')[0]"
+								/>
 							</div>
 						</div>
-					</div>
-					<div class="space-y-2">
-						<label>Image</label>
-						<Input
-							type="file"
-							accept="image/*"
-							@input="(e) => (form.image = e.target.files[0])"
-						/>
-					</div>
-					<div class="space-y-2">
-						<label>Initial Stock Quantity</label>
-						<Input type="number" v-model="form.quantity" min="1" />
-					</div>
-					<div class="space-y-2">
-						<label>Expiration Date</label>
-						<Input type="date" v-model="form.expiration_date" />
-					</div>
-					<Button type="submit" :disabled="form.processing || hasErrors" class="w-full">
+					</form>
+				</div>
+				<DialogFooter class="p-6 pt-0">
+					<Button
+						type="submit"
+						:disabled="form.processing || hasErrors"
+						@click="submitProduct"
+					>
 						{{ form.processing ? "Creating Product..." : "Create Product" }}
 					</Button>
-				</form>
+				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 
@@ -313,6 +452,9 @@ const hasErrors = computed(() => Object.keys(form.errors).length > 0);
 					</div>
 
 					<div class="flex gap-2 pt-4">
+						<Button variant="outline" size="sm" @click="editProduct(product)">
+							Edit Product
+						</Button>
 						<Button
 							variant="outline"
 							size="sm"
@@ -321,7 +463,7 @@ const hasErrors = computed(() => Object.keys(form.errors).length > 0);
 								showInventoryDialog = true;
 							"
 						>
-							Update Stock
+							Add Stock
 						</Button>
 						<Button
 							variant="destructive"
@@ -360,22 +502,33 @@ const hasErrors = computed(() => Object.keys(form.errors).length > 0);
 					</div>
 
 					<div class="space-y-2">
-						<label>Add Quantity</label>
+						<label>Add Quantity <span class="text-destructive">*</span></label>
 						<Input
 							type="number"
 							v-model="inventoryForm.quantity"
 							min="1"
 							placeholder="Enter quantity to add"
+							:class="{ 'border-destructive': inventoryForm.errors.quantity }"
 						/>
+						<p v-if="inventoryForm.errors.quantity" class="text-destructive text-sm">
+							{{ inventoryForm.errors.quantity }}
+						</p>
 					</div>
 
 					<div class="space-y-2">
-						<label>Expiration Date</label>
+						<label>Expiration Date <span class="text-destructive">*</span></label>
 						<Input
 							type="date"
 							v-model="inventoryForm.expiration_date"
 							:min="new Date().toISOString().split('T')[0]"
+							:class="{ 'border-destructive': inventoryForm.errors.expiration_date }"
 						/>
+						<p
+							v-if="inventoryForm.errors.expiration_date"
+							class="text-destructive text-sm"
+						>
+							{{ inventoryForm.errors.expiration_date }}
+						</p>
 					</div>
 
 					<DialogFooter>
@@ -397,7 +550,7 @@ const hasErrors = computed(() => Object.keys(form.errors).length > 0);
 						cannot be undone.
 					</DialogDescription>
 				</DialogHeader>
-				<DialogFooter class="flex gap-2 justify-end">
+				<DialogFooter class="flex justify-end gap-2">
 					<Button variant="outline" @click="showDeleteDialog = false"> Cancel </Button>
 					<Button
 						variant="destructive"
@@ -407,6 +560,71 @@ const hasErrors = computed(() => Object.keys(form.errors).length > 0);
 						{{ router.processing ? "Deleting..." : "Delete" }}
 					</Button>
 				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+
+		<!-- Edit Product Dialog -->
+		<Dialog v-model:open="showEditDialog">
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Edit Product</DialogTitle>
+				</DialogHeader>
+				<form @submit.prevent="updateProduct" class="space-y-4">
+					<div class="space-y-2">
+						<label>Product Name</label>
+						<Input v-model="editForm.product_name" />
+					</div>
+
+					<div class="space-y-2">
+						<label>Description</label>
+						<Textarea v-model="editForm.description" />
+					</div>
+
+					<div class="space-y-2">
+						<label>Category</label>
+						<Select v-model="editForm.category">
+							<SelectTrigger>
+								<SelectValue placeholder="Select a category" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem
+									v-for="category in categories"
+									:key="category.category_id"
+									:value="category.category_id.toString()"
+								>
+									{{ category.category_name }}
+								</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
+
+					<div class="space-y-2">
+						<label>Price</label>
+						<Input
+							type="number"
+							step="0.01"
+							min="0.01"
+							v-model="editForm.price"
+							@input="(e) => (editForm.price = Math.abs(parseFloat(e.target.value) || 0))"
+						/>
+					</div>
+
+					<!-- Inside Edit Product Dialog form, add before the DialogFooter -->
+					<div class="space-y-2">
+						<label>Update Image (Optional)</label>
+						<Input
+							type="file"
+							accept="image/*"
+							@input="(e) => (editForm.image = e.target.files[0])"
+						/>
+					</div>
+
+					<DialogFooter class="mt-4">
+						<Button type="submit" :disabled="editForm.processing">
+							{{ editForm.processing ? "Updating..." : "Update Product" }}
+						</Button>
+					</DialogFooter>
+				</form>
 			</DialogContent>
 		</Dialog>
 	</div>

@@ -19,13 +19,15 @@ const selectUser = (id) => {
 <template>
 	<Link :href="route('product.show', product.product_id)">
 		<div class="group relative">
-			<div
-				class="aspect-h-1 aspect-w-1 lg:aspect-none group-hover:opacity-75 lg:h-80 bg-muted w-full overflow-hidden rounded-lg"
-			>
+			<div class="aspect-square w-full bg-muted overflow-hidden rounded-lg">
 				<img
-					:src="product.product_image"
+					:src="
+						product.product_image
+							? `/storage/products/${product.product_image}`
+							: '/storage/products/default.png'
+					"
 					:alt="product.product_name"
-					class="lg:h-full lg:w-full object-cover object-center w-full h-full"
+					class="h-full w-full object-cover object-center transition-opacity group-hover:opacity-75"
 				/>
 			</div>
 			<div class="flex justify-between mt-4">

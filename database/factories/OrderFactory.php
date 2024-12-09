@@ -11,7 +11,7 @@ class OrderFactory extends Factory
 
     public function definition()
     {
-        $statuses = ['pending', 'preparing', 'completed', 'cancelled'];
+        $statuses = ['pending', 'preparing', 'ready', 'completed', 'cancelled'];
         $status = $this->faker->randomElement($statuses);
         
         return [

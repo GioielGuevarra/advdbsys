@@ -23,15 +23,15 @@ const form = useForm({
 });
 
 const submitOrder = () => {
-  form.post(route("checkout.process"), {
-    onSuccess: () => {
-      // The controller redirects to order.confirmation
-      console.log("Order placed successfully");
-    },
-    onError: (errors) => {
-      console.error("Order failed:", errors);
-    }
-  });
+	form.post(route("checkout.process"), {
+		onSuccess: () => {
+			// The controller redirects to order.confirmation
+			console.log("Order placed successfully");
+		},
+		onError: (errors) => {
+			console.error("Order failed:", errors);
+		},
+	});
 };
 
 const calculateTotal = () => {
@@ -42,21 +42,21 @@ const calculateTotal = () => {
 
 // Simplify the logic to just use the slots provided by the backend
 const currentDaySlots = computed(() => {
-  // Just return the slots as provided by the backend
-  // The backend already handles the business hours logic
-  return props.pickupSlots;
+	// Just return the slots as provided by the backend
+	// The backend already handles the business hours logic
+	return props.pickupSlots;
 });
 
 const noAvailableSlots = computed(() => {
-  return currentDaySlots.value.length === 0;
+	return currentDaySlots.value.length === 0;
 });
 
 // Update error text to be more accurate
 const errorText = computed(() => {
-  if (noAvailableSlots.value) {
-    return "No available pickup slots. Please try again during business hours (9 AM - 5 PM).";
-  }
-  return "";
+	if (noAvailableSlots.value) {
+		return "No available pickup slots. Please try again during business hours (9 AM - 5 PM).";
+	}
+	return "";
 });
 </script>
 
@@ -76,7 +76,11 @@ const errorText = computed(() => {
 				<div class="space-y-4">
 					<div v-for="item in cart.items" :key="item.cart_item_id" class="flex gap-4">
 						<img
-							:src="item.product.product_image"
+							:src="
+								item.product.product_image
+									? `/storage/products/${item.product.product_image}`
+									: '/storage/products/default.png'
+							"
 							:alt="item.product.product_name"
 							class="object-cover w-20 h-20 rounded"
 						/>
@@ -94,15 +98,12 @@ const errorText = computed(() => {
 			<!-- Pickup Time Selection -->
 			<div class="space-y-4">
 				<h2 class="font-semibold">Select Pickup Time</h2>
-				
+
 				<div v-if="errorText" class="mb-2 text-sm text-red-500">
 					{{ errorText }}
 				</div>
 
-				<Select 
-					v-model="form.pickup_time"
-					:disabled="noAvailableSlots"
-				>
+				<Select v-model="form.pickup_time" :disabled="noAvailableSlots">
 					<SelectTrigger>
 						<SelectValue placeholder="Choose pickup time" />
 					</SelectTrigger>
@@ -141,7 +142,7 @@ const errorText = computed(() => {
 					:disabled="form.processing || !form.pickup_time"
 					@click="submitOrder"
 				>
-					{{ form.processing ? 'Processing...' : 'Place Order' }}
+					{{ form.processing ? "Processing..." : "Place Order" }}
 				</Button>
 				<p class="text-muted-foreground text-sm text-center">
 					By placing this order, you agree to pay in person during pickup.

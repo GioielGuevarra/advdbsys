@@ -11,11 +11,11 @@ class Kernel extends HttpKernel
     protected $middlewareAliases = [
         'auth' => \App\Http\Middleware\Authenticate::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
-        'admin' => \App\Http\Middleware\AdminMiddleware::class,  // Add this line
-        // ...existing code...
+        'admin' => \App\Http\Middleware\AdminMiddleware::class,  
     ];
 
     protected $routeMiddleware = [
-        // ...existing code...
+        'check.banned' => \App\Http\Middleware\CheckBanned::class,
+        'guest.redirect' => \App\Http\Middleware\RedirectIfGuest::class,
     ];
 }

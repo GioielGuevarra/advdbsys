@@ -68,21 +68,24 @@ class OrderController extends Controller
     public function update(Request $request, Order $order)
     {
         // Prevent status change if order is completed or cancelled
-        if (in_array($order->status, ['completed', 'cancelled'])) {
+        if (!$order->canChangeStatus()) {
             return back()->with('error', 'Cannot modify completed or cancelled orders');
         }
 
         $validated = $request->validate([
-            'status' => 'required|in:pending,preparing,completed,cancelled'
+            'status' => 'required|in:pending,preparing,ready,completed,cancelled'
         ]);
 
-        // Start transaction
         DB::beginTransaction();
 
         try {
-            // Handle stock changes based on status transition
-            if ($validated['status'] === 'completed') {
-                // Deduct stock when completing order
+            // Only allow marking as completed if order is ready
+            if ($validated['status'] === Order::STATUS_COMPLETED && !$order->canComplete()) {
+                throw new \Exception('Order must be ready before marking as completed');
+            }
+
+            // Handle stock changes when marking as completed
+            if ($validated['status'] === Order::STATUS_COMPLETED) {
                 foreach ($order->items as $item) {
                     ProductItem::deductStock($item->product, $item->quantity);
                 }
