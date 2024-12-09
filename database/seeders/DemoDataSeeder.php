@@ -11,6 +11,8 @@ use App\Models\CartItem;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 use Faker\Factory;
 
 class DemoDataSeeder extends Seeder
@@ -24,7 +26,18 @@ class DemoDataSeeder extends Seeder
 
     public function run()
     {
-        // Create 20 customer accounts
+        // Create customers first
+        $customers = $this->createCustomers();
+        
+        // Generate orders with realistic patterns
+        $this->generateOrders($customers);
+        
+        // Create active carts for some customers
+        $this->createActiveCarts($customers);
+    }
+
+    protected function createCustomers()
+    {
         $customers = collect();
         for ($i = 1; $i <= 20; $i++) {
             $email = "customer{$i}@example.com";
@@ -49,39 +62,101 @@ class DemoDataSeeder extends Seeder
             
             $customers->push($account);
         }
+        return $customers;
+    }
 
-        // Create 50 orders distributed among customers
-        $customers->each(function ($customer) {
-            // Generate 1-5 orders per customer
-            $numOrders = rand(1, 5);
+    protected function generateOrders($customers)
+    {
+        $startDate = now()->subMonths(12)->startOfDay();
+        $endDate = now()->endOfDay();
+        $baseOrdersPerDay = 8;
+        $monthlyGrowthRate = 1.05;
+        
+        $currentDate = $startDate;
+        
+        while ($currentDate <= $endDate) {
+            $monthsSinceStart = $startDate->diffInMonths($currentDate);
+            $growthMultiplier = pow($monthlyGrowthRate, $monthsSinceStart);
+            $dayOfWeekMultiplier = ($currentDate->isWeekend()) ? 1.5 : 1.0;
+            $targetOrders = round($baseOrdersPerDay * $growthMultiplier * $dayOfWeekMultiplier);
+            $randomMultiplier = $this->faker->randomFloat(2, 0.8, 1.2);
+            $ordersToCreate = round($targetOrders * $randomMultiplier);
             
-            Order::factory()
-                ->count($numOrders)
-                ->create([
-                    'account_id' => $customer->account_id
-                ])
-                ->each(function ($order) {
-                    // Add 1-5 items to each order
-                    $products = Product::inRandomOrder()->take(rand(1, 5))->get();
+            for ($i = 0; $i < $ordersToCreate; $i++) {
+                DB::transaction(function () use ($customers, $currentDate) {
+                    $customer = $customers->random();
+                    $orderTime = $currentDate->copy()->addSeconds(rand(0, 86399));
                     
+                    // Create order items first to calculate total
+                    $items = [];
                     $total = 0;
+                    $itemCount = rand(1, 5);
+                    $products = Product::inRandomOrder()->take($itemCount)->get();
+                    
                     foreach ($products as $product) {
-                        $quantity = rand(1, 3);
+                        $quantity = $this->faker->randomElement([1, 1, 1, 2, 2, 3]);
                         $price = $product->price;
-                        
-                        OrderItem::create([
-                            'order_id' => $order->order_id,
+                        $items[] = [
                             'product_id' => $product->product_id,
                             'quantity' => $quantity,
                             'price' => $price
-                        ]);
-                        
+                        ];
                         $total += $price * $quantity;
                     }
-                    
-                    $order->update(['total_amount' => $total]);
+
+                    // Create order with total amount and pickup time
+                    $order = Order::create([
+                        'account_id' => $customer->account_id,
+                        'order_number' => 'ORD-' . strtoupper($this->faker->bothify('??####')),
+                        'status' => $this->faker->randomElement(['pending', 'preparing', 'ready', 'completed', 'cancelled']), // Updated with correct enum values
+                        'total_amount' => $total,
+                        'pickup_time' => $orderTime->copy()->addHours(rand(1, 4)), // Pickup time 1-4 hours after order
+                        'created_at' => $orderTime,
+                        'updated_at' => $orderTime,
+                    ]);
+
+                    // Create order items
+                    foreach ($items as $item) {
+                        OrderItem::create([
+                            'order_id' => $order->order_id,
+                            'product_id' => $item['product_id'],
+                            'quantity' => $item['quantity'],
+                            'price' => $item['price']
+                        ]);
+                    }
                 });
+            }
             
+            $currentDate->addDay();
+        }
+    }
+
+    protected function addOrderItems($order)
+    {
+        $total = 0;
+        $itemCount = rand(1, 5);
+        $products = Product::inRandomOrder()->take($itemCount)->get();
+        
+        foreach ($products as $product) {
+            $quantity = $this->faker->randomElement([1, 1, 1, 2, 2, 3]); // More likely to order less quantity
+            $price = $product->price;
+            
+            OrderItem::create([
+                'order_id' => $order->order_id,
+                'product_id' => $product->product_id,
+                'quantity' => $quantity,
+                'price' => $price
+            ]);
+            
+            $total += $price * $quantity;
+        }
+        
+        return $total;
+    }
+
+    protected function createActiveCarts($customers)
+    {
+        $customers->each(function ($customer) {
             // Create active cart for some customers (70% chance)
             if (rand(1, 100) <= 70) {
                 $cart = Cart::create([
